@@ -71,7 +71,16 @@ class SAM3DGaussianSplatting:
         import comfy.model_management as mm
         from moge.model.v1 import MoGeModel
 
-        pbar = comfy.utils.ProgressBar(3)
+        # ProgressBar's hook reads PromptServer.last_prompt_id, which is
+        # only set during a regular graph execution. The viewer's
+        # 「画像を読み込む」 path invokes this node directly via the HTTP
+        # route (no prompt id), so the hook would AttributeError. Skip
+        # the pbar there — there's no node UI to update anyway.
+        class _NullPBar:
+            def update(self, *_a, **_kw):
+                pass
+
+        pbar = _NullPBar() if _output_path else comfy.utils.ProgressBar(3)
         t0 = time.time()
 
         precision = model.get("precision", "bf16")

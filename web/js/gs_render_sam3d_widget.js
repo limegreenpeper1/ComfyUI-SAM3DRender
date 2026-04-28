@@ -13,6 +13,7 @@ const TARGET_NODE        = "GaussianSplattingRenderSAM3D";
 const CONFIRM_MSG        = "gs-render-sam3d-confirmed";
 const CANCEL_MSG         = "gs-render-sam3d-cancelled";
 const HIDDEN_IMG         = "render_image";
+const HIDDEN_INPUT_IMG   = "input_image";
 const HIDDEN_VIEW_STATE  = "view_state";
 const STATUS_NAME        = "status";
 const EDITOR_PATH        = "/gs_render/editor_sam3d";
@@ -50,6 +51,7 @@ function attachWidgets(node) {
     node.__gsRenderSam3dAttached = true;
 
     const hiddenImg       = _ensureHidden(node, HIDDEN_IMG);
+    const hiddenInputImg  = _ensureHidden(node, HIDDEN_INPUT_IMG);
     const hiddenViewState = _ensureHidden(node, HIDDEN_VIEW_STATE);
 
     const statusWidget = node.addWidget(
@@ -74,6 +76,7 @@ function attachWidgets(node) {
     refresh();
     node.__gsRenderSam3dRefresh         = refresh;
     node.__gsRenderSam3dImgHidden       = hiddenImg;
+    node.__gsRenderSam3dInputImgHidden  = hiddenInputImg;
     node.__gsRenderSam3dViewStateHidden = hiddenViewState;
 
     const origConfig = node.onConfigure;
@@ -156,11 +159,15 @@ window.addEventListener("message", (evt) => {
         return;
     }
     if (evt.data.type !== CONFIRM_MSG) return;
-    const { node_id, render_image, view_state } = evt.data;
+    const { node_id, render_image, input_image, view_state } = evt.data;
     const target = app.graph?.getNodeById?.(Number(node_id));
     if (target && target.comfyClass === TARGET_NODE && target.__gsRenderSam3dImgHidden) {
         target.__gsRenderSam3dImgHidden.value =
             typeof render_image === "string" ? render_image : "";
+        if (target.__gsRenderSam3dInputImgHidden) {
+            target.__gsRenderSam3dInputImgHidden.value =
+                typeof input_image === "string" ? input_image : "";
+        }
         if (target.__gsRenderSam3dViewStateHidden) {
             target.__gsRenderSam3dViewStateHidden.value =
                 typeof view_state === "string" ? view_state : "";

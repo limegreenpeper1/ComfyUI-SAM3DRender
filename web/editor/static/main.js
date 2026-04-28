@@ -1585,6 +1585,10 @@ async function main() {
             type: window.GS_CONFIRM_TYPE || "gs-render-confirmed",
             node_id: window.GS_NODE_ID,
             render_image: dataUrl,
+            // SAM3D variant only: the original image the user uploaded
+            // into the viewer, captured as a base64 dataURL by the
+            // viewer's iframe glue. Vanilla viewer leaves this empty.
+            input_image: window.GS_SAM3D_INPUT_IMAGE || "",
             // Camera framing snapshot — restored on next open via URL.
             view_state,
         };

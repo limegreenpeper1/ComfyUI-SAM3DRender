@@ -33,6 +33,10 @@ class GaussianSplattingRenderSAM3D:
             "hidden": {
                 "node_id": "UNIQUE_ID",
                 "render_image": ("STRING", {"default": ""}),
+                # Original image the user uploaded into the viewer; the
+                # viewer iframe captures it as a base64 dataURL at upload
+                # time and ships it back alongside render_image on confirm.
+                "input_image":  ("STRING", {"default": ""}),
                 # Camera framing snapshot, persisted across modal opens
                 # exactly like the vanilla node (axis dropdown + view
                 # matrix + splat scale + near clip).
@@ -40,19 +44,22 @@ class GaussianSplattingRenderSAM3D:
             },
         }
 
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
+    RETURN_TYPES = ("IMAGE", "IMAGE")
+    RETURN_NAMES = ("image", "input_image")
     OUTPUT_NODE = True
     FUNCTION = "execute"
     CATEGORY = "GaussianSplatting"
 
     @classmethod
-    def IS_CHANGED(cls, node_id="", render_image="", **_):
+    def IS_CHANGED(cls, node_id="", render_image="", input_image="", **_):
         # Hash only the captured payload; the upstream model dict is
         # opaque (and may be huge/unhashable). Same shape as vanilla.
-        return f"sam3d|img:{len(render_image or '')}"
+        return (
+            f"sam3d|img:{len(render_image or '')}"
+            f"|src:{len(input_image or '')}"
+        )
 
-    def execute(self, model=None, node_id="", render_image="", **_):
+    def execute(self, model=None, node_id="", render_image="", input_image="", **_):
         if not render_image:
             raise RuntimeError(
                 "[GSRender-SAM3D] レンダリング画像が未確定です。\n"
@@ -62,7 +69,12 @@ class GaussianSplattingRenderSAM3D:
                 "'Open Gaussian Splatting Render（SAM3D）' on the node, load "
                 "an image in the viewer, then press 'Confirm & Close'."
             )
-        return (_b64_to_image_tensor(render_image),)
+        rendered = _b64_to_image_tensor(render_image)
+        # input_image may be empty for workflows confirmed before this
+        # output existed — fall back to the rendered image so the graph
+        # still executes; users can re-confirm to populate the original.
+        source = _b64_to_image_tensor(input_image) if input_image else rendered
+        return (rendered, source)
 
 
 NODE_CLASS_MAPPINGS = {

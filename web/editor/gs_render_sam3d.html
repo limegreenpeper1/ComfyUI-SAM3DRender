@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Gaussian Splatting Render (SAM3D)</title>
-<link rel="stylesheet" href="/extensions/ComfyUI-SAM3DRender/editor/static/style.css?v=32" />
+<link rel="stylesheet" href="/extensions/ComfyUI-SAM3DRender/editor/static/style.css?v=33" />
 <style>
   /* Stack the SAM3D-specific buttons together with the existing
      range-select toggle so the toolbar reads top-to-bottom:
@@ -195,7 +195,7 @@ Confirm &amp; Close で範囲をキャプチャ
     window.GS_CONFIRM_TYPE = "gs-render-sam3d-confirmed";
   })();
 </script>
-<script src="/extensions/ComfyUI-SAM3DRender/editor/static/main.js?v=32"></script>
+<script src="/extensions/ComfyUI-SAM3DRender/editor/static/main.js?v=33"></script>
 
 <script>
 // SAM3D viewer glue — wires the two new buttons.
@@ -234,6 +234,21 @@ Confirm &amp; Close で範囲をキャプチャ
   // a new image; restored from the parent-window cache on iframe boot.
   let plyBytes = null;          // ASCII ArrayBuffer kept for 「ply保存」
   let plySuggestedName = "pointcloud.ply";
+
+  // Base64 dataURL of the user's uploaded image, exposed to main.js so
+  // confirmAndClose() can include it in the postMessage. Cached on the
+  // parent window so reopening the modal restores both the PLY and the
+  // input-image return value.
+  window.GS_SAM3D_INPUT_IMAGE = window.GS_SAM3D_INPUT_IMAGE || "";
+
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(typeof r.result === "string" ? r.result : "");
+      r.onerror = () => reject(r.error || new Error("read failed"));
+      r.readAsDataURL(file);
+    });
+  }
 
   // Parent-window cache helpers. Same-origin iframe → direct property
   // access works. We must always hand fresh slice() copies to the worker
@@ -280,6 +295,9 @@ Confirm &amp; Close で範囲をキャプチャ
 
     plyBytes = cached.ascii;        // ASCII unchanged (never transferred)
     plySuggestedName = cached.suggestedName || plySuggestedName;
+    if (cached.inputImage) {
+      window.GS_SAM3D_INPUT_IMAGE = cached.inputImage;
+    }
     // Hand a fresh copy to the worker — slice() returns a new buffer
     // independent of the cached one, so the cache survives transfer.
     window.gsLoadPlyFromBuffer(cached.binary.slice(0));
@@ -299,7 +317,14 @@ Confirm &amp; Close で範囲をキャプチャ
     if (statusEl) statusEl.textContent = "SAM3D で点群を生成中…";
     toast("SAM3D を実行中…", 60000);
 
+    let inputImageDataUrl = "";
     try {
+      // Capture the uploaded image as a base64 dataURL up front so we
+      // can return it to the node as the `input_image` output. Read it
+      // before the upload so a network failure doesn't lose the source.
+      try { inputImageDataUrl = await readFileAsDataURL(f); }
+      catch (_e) { inputImageDataUrl = ""; }
+
       const fd = new FormData();
       fd.append("image", f, f.name || "upload.png");
       const resp = await fetch("/gs_render/sam3d_generate", {
@@ -358,10 +383,12 @@ Confirm &amp; Close で範囲をキャプチャ
       // we cache an independent slice() of the binary for the next
       // modal reopen — otherwise the cached buffer would be detached.
       plyBytes = asciiBuf;
+      window.GS_SAM3D_INPUT_IMAGE = inputImageDataUrl;
       writeCache({
         ascii: asciiBuf,           // never transferred; safe to share
         binary: binaryBuf.slice(0),// independent copy for future reopens
         suggestedName: plySuggestedName,
+        inputImage: inputImageDataUrl,
       });
       window.gsLoadPlyFromBuffer(binaryBuf);
       saveBtn.disabled = false;

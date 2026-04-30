@@ -34,9 +34,15 @@ ComfyUI Manager または手動で `custom_nodes/` 配下へ配置してから C
 |---|---|---|
 | `win-x64` | Windows AMD64 | 3.12 |
 | `linux-x64` | Linux x86_64 | 3.12 |
+| `macos-arm64` | macOS Apple Silicon（MPS） | 3.12 |
+| `macos-x64` | macOS Intel（CPU / 対応 PyTorch 環境） | 3.12 |
 | `dgx-spark` | Linux aarch64（Grace + GB10 など） | 3.12 |
 
 CUDA バージョンは comfy-env がホスト側で自動検出（例：CUDA 12.8 → torch 2.8 cu128）。
+macOS / MPS では CUDA wheel を使わず、PyPI の通常版 `torch` / `torchvision`
+を隔離環境に入れます。`precision=auto` は MPS では安定性優先で `fp32`
+に解決されます。必要に応じて手動で `fp16` / `bf16` も選べますが、PyTorch
+の MPS 実装状況によっては一部演算が CPU fallback になることがあります。
 
 ### モデルファイル
 

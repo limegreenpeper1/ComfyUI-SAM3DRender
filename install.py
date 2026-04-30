@@ -7,10 +7,14 @@ shadow ComfyUI's top-level ``nodes`` module (C:\\ComfyUI\\nodes.py)
 when install.py is invoked from ComfyUI's process."""
 
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
 NODE_DIR = Path(__file__).resolve().parent
+
+if sys.platform == "darwin":
+    os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 
 def _load_local(name: str) -> object:

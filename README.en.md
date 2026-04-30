@@ -43,10 +43,17 @@ Branched in `_env_config.detect_target()`:
 |---|---|---|
 | `win-x64` | Windows AMD64 | 3.12 |
 | `linux-x64` | Linux x86_64 | 3.12 |
+| `macos-arm64` | macOS Apple Silicon (MPS) | 3.12 |
+| `macos-x64` | macOS Intel (CPU / supported PyTorch environment) | 3.12 |
 | `dgx-spark` | Linux aarch64 (Grace + GB10 etc.) | 3.12 |
 
 The CUDA version is auto-detected by comfy-env on the host (e.g.
 CUDA 12.8 → torch 2.8 cu128).
+On macOS / MPS, the isolated environment uses the regular PyPI
+`torch` / `torchvision` wheels instead of CUDA wheels. `precision=auto`
+resolves to `fp32` on MPS for reliability. You can still choose `fp16` /
+`bf16` manually, but some PyTorch MPS operations may fall back to CPU
+depending on the installed PyTorch release.
 
 ### Model files
 

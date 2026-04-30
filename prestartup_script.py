@@ -8,9 +8,14 @@ adding NODE_DIR to sys.path — doing the latter makes our local
 (C:\\ComfyUI\\nodes.py), breaking ``nodes.init_extra_nodes``."""
 
 import importlib.util
+import os
+import sys
 from pathlib import Path
 
 NODE_DIR = Path(__file__).resolve().parent
+
+if sys.platform == "darwin":
+    os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
 
 
 def _load_local(name: str) -> object:

@@ -9,6 +9,12 @@ Layout:
 The WebGL viewer source under web/editor/static/main.js is adapted from
 antimatter15/splat (MIT)."""
 
+import os
+import sys
+
+if sys.platform == "darwin":
+    os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+
 from comfy_env import register_nodes
 
 NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS = register_nodes()

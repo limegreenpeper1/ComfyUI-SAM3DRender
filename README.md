@@ -1,5 +1,8 @@
 **日本語** | [English](./README.en.md)
 
+追加install:
+pip install git+https://github.com/microsoft/MoGe.git
+
 # ComfyUI-SAM3DRender
 
 ComfyUI 用カスタムノードパッケージ。SAM 3D Objects 系の点群・3DGS 出力を **WebGL Gaussian Splatting ビューア** で開いて、構図を決めて、画像としてキャプチャするまでをノードグラフで完結させます。SAM 3D 由来の深度推定（MoGe）→ 点群 PLY 生成も同梱しています。

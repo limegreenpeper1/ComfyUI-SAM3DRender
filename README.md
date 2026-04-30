@@ -1,7 +1,5 @@
 **日本語** | [English](./README.en.md)
 
-追加install:
-pip install git+https://github.com/microsoft/MoGe.git
 
 # ComfyUI-SAM3DRender
 

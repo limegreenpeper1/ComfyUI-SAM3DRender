@@ -50,6 +50,11 @@ def _resolve_precision(precision: str = "auto") -> str:
     import comfy.model_management as mm
 
     device = mm.get_torch_device()
+    if getattr(device, "type", None) == "mps":
+        # MoGe is more reliable on MPS in fp32. ComfyUI may report bf16/fp16
+        # support on recent macOS, but several model ops still vary by PyTorch
+        # release and can fail or produce unstable output at reduced precision.
+        return "fp32"
     if mm.should_use_bf16(device):
         return "bf16"
     if mm.should_use_fp16(device):

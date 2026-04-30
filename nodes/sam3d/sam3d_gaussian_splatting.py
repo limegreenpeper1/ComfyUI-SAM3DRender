@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,21 @@ log = logging.getLogger("sam3drender")
 _MOGE_MODEL = None
 _MOGE_DTYPE = None
 _MOGE_PATH = None
+
+
+def _suppress_known_moge_warnings() -> None:
+    """Hide noisy upstream warnings that do not affect this pipeline."""
+    warnings.filterwarnings(
+        "ignore",
+        message=r"The following deprecated/invalid arguments are ignored:.*",
+        category=UserWarning,
+        module=r"moge\.model\.v1",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        message=r"In MPS autocast, but the target dtype is not supported.*",
+        category=UserWarning,
+    )
 
 
 class SAM3DGaussianSplatting:
@@ -71,6 +87,8 @@ class SAM3DGaussianSplatting:
         import comfy.model_management as mm
         from moge.model.v1 import MoGeModel
 
+        _suppress_known_moge_warnings()
+
         # ProgressBar's hook reads PromptServer.last_prompt_id, which is
         # only set during a regular graph execution. The viewer's
         # 「画像を読み込む」 path invokes this node directly via the HTTP
@@ -102,7 +120,9 @@ class SAM3DGaussianSplatting:
             or _MOGE_PATH != moge_path
         ):
             log.info("[SAM3DRender] loading MoGe (%s, dtype=%s)", moge_path, dtype)
-            mdl = MoGeModel.from_pretrained(moge_path)
+            with warnings.catch_warnings():
+                _suppress_known_moge_warnings()
+                mdl = MoGeModel.from_pretrained(moge_path)
             mdl = mdl.to(dtype=dtype)
             mdl.eval()
             _MOGE_MODEL = mdl
@@ -130,7 +150,8 @@ class SAM3DGaussianSplatting:
             .contiguous()
         )
 
-        with torch.no_grad():
+        with torch.no_grad(), warnings.catch_warnings():
+            _suppress_known_moge_warnings()
             output = _MOGE_MODEL.infer(
                 rgb_tensor.to(device=device, dtype=dtype),
                 force_projection=False,

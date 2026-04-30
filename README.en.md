@@ -1,5 +1,8 @@
 [日本語](./README.md) | **English**
 
+Add to install: 
+pip install git+https://github.com/microsoft/MoGe.git
+
 # ComfyUI-SAM3DRender
 
 A ComfyUI custom-node package that closes the loop from SAM 3D point
